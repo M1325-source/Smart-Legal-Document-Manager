@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Smart Legal Document Manager</title>
+
+<style>
+
+body{
+font-family:Segoe UI;
+background:#f4f6f9;
+margin:0;
+padding:40px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+margin-bottom:40px;
+color:#333;
+}
+
+.card{
+background:white;
+padding:25px;
+margin-bottom:30px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.card h3{
+margin-top:0;
+color:#444;
+}
+
+input,textarea{
+width:100%;
+padding:10px;
+margin-top:8px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:6px;
+font-size:14px;
+}
+
+textarea{
+min-height:80px;
+}
+
+button{
+background:#2f80ed;
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+cursor:pointer;
+font-weight:600;
+}
+
+button:hover{
+background:#1c5dc9;
+}
+
+.added{
+background:#d4edda;
+border-left:5px solid #28a745;
+padding:8px;
+margin-bottom:5px;
+border-radius:4px;
+}
+
+.removed{
+background:#f8d7da;
+border-left:5px solid #dc3545;
+padding:8px;
+margin-bottom:5px;
+border-radius:4px;
+}
+
+#result{
+margin-top:15px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+<h1>📄 Smart Legal Document Manager</h1>
+
+
+<div class="card">
+
+<h3>Create Document</h3>
+
+<input id="title" placeholder="Document Title">
+
+<textarea id="content" placeholder="Document Content"></textarea>
+
+<input id="user" placeholder="Created By">
+
+<button onclick="createDoc()">Create Document</button>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Update Document</h3>
+
+<input id="docid" placeholder="Document ID">
+
+<textarea id="newcontent" placeholder="Updated Content"></textarea>
+
+<input id="updateuser" placeholder="Updated By">
+
+<button onclick="updateDoc()">Update Version</button>
+
+</div>
+
+
+
+<div class="card">
+
+<h3>Compare Versions</h3>
+
+<input id="cmpdoc" placeholder="Document ID">
+
+<input id="v1" placeholder="Version 1">
+
+<input id="v2" placeholder="Version 2">
+
+<button onclick="compare()">Compare</button>
+
+<div id="result"></div>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+async function createDoc(){
+
+const title=document.getElementById("title").value
+const content=document.getElementById("content").value
+const user=document.getElementById("user").value
+
+const res=await fetch("/documents/",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({title,content,user})
+})
+
+const data=await res.json()
+
+alert("Created Document ID: "+data.document_id)
+
+}
+
+
+
+async function updateDoc(){
+
+const id=document.getElementById("docid").value
+const content=document.getElementById("newcontent").value
+const user=document.getElementById("updateuser").value
+
+const res=await fetch(`/documents/${id}`,{
+method:"PUT",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({content,user})
+})
+
+const data=await res.json()
+
+if(data.status==="ignored"){
+alert("No changes detected. Version remains "+data.current_version)
+}else{
+alert("New Version Created: "+data.new_version)
+}
+
+}
+
+
+
+async function compare(){
+
+const id=document.getElementById("cmpdoc").value
+const v1=document.getElementById("v1").value
+const v2=document.getElementById("v2").value
+
+const res=await fetch(`/documents/${id}/compare?v1=${v1}&v2=${v2}`)
+
+const data=await res.json()
+
+let html="<h4>Changes</h4>"
+
+data.added.forEach(line=>{
+html+=`<div class="added">+ ${line}</div>`
+})
+
+data.removed.forEach(line=>{
+html+=`<div class="removed">- ${line}</div>`
+})
+
+document.getElementById("result").innerHTML=html
+
+}
+
+</script>
+
+</body>
+</html>
